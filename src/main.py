@@ -28,13 +28,24 @@ def print_header():
 def main():
     """Main function to run the CLI interface."""
     parser = argparse.ArgumentParser(description="CodeBridge AI - Local Coding Assistant")
-    parser.add_argument("--model", default="codellama:7b", help="Ollama model to use")
+    parser.add_argument("--model", default="GLM-4-0414", help="The model to use")
+    parser.add_argument("--provider", default="lmstudio", choices=["lmstudio", "ollama"], 
+                        help="The LLM provider to use (lmstudio or ollama)")
+    parser.add_argument("--lmstudio-url", default="http://localhost:1234", 
+                        help="Base URL for LM Studio API")
+    parser.add_argument("--ollama-url", default="http://localhost:11434", 
+                        help="Base URL for Ollama API")
     parser.add_argument("--setup", action="store_true", help="Run initial setup (process documents)")
     args = parser.parse_args()
     
     # Initialize engines
     embedding_engine = EmbeddingEngine()
-    llm_engine = LLMEngine(model_name=args.model)
+    llm_engine = LLMEngine(
+        model_name=args.model,
+        provider=args.provider,
+        lmstudio_base_url=args.lmstudio_url,
+        ollama_base_url=args.ollama_url
+    )
     
     # Run setup if requested
     if args.setup:
@@ -43,9 +54,12 @@ def main():
         print("Setup complete!")
         return
     
-    # Check if Ollama is running
-    if not llm_engine.check_ollama():
-        print("Please start Ollama and make sure the model is available.")
+    # Check if LLM provider is running
+    if not llm_engine.check_connection():
+        if args.provider == "lmstudio":
+            print("Please start LM Studio and make sure the API is enabled.")
+        else:
+            print("Please start Ollama and make sure the model is available.")
         return
     
     # Check if vector database has documents
